@@ -1,5 +1,7 @@
 import struct
 import socket
+import rsa
+from OpenSSL import rand
 class JsonMq:
     def __init__(self) -> None:
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -9,6 +11,34 @@ class JsonMq:
         #self.sockConn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self.maxLenMessageConst = 100000
         self.unprocessed_bytes = bytearray()
+    
+    def SecureChannel(self):
+        self.GenAndSendTriplet()
+        return self.GetAndVerifyTriplet()
+    
+    def GenAndSendTriplet(self):
+        (pubkey, privkey) = rsa.newkeys(2048)
+        nonce = rand.bytes(32)
+        s = rsa.sign(nonce, privkey, "SHA-256")
+        s_str = s.decode()
+        self.Send(s_str)
+        self.sockConn.sendall(nonce)
+        pubkey_str = pubkey.save_pkcs1()
+        self.Send(pubkey_str)
+        
+        
+        
+    def GetAndVerifyTriplet(self):
+        try:
+            s = self.Get()
+            nonce = self.GetForCount(32)
+            openKey = self.Get()
+            openKey = rsa.PublicKey.load_pkcs1(openKey.encode())
+            rsa.verify(bytes(nonce), s.encode(), openKey)
+            return True
+        except:
+            return False
+            
         
         
     def Send(self, jsonMessage) -> str:

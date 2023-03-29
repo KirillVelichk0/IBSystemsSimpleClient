@@ -3,7 +3,9 @@ import json
 import hashlib
 import base64
 import JsonMq
+
 jsonMqService = JsonMq.JsonMq()
+jsonMqService.SecureChannel()
 maxLenMessageConst = 100000
 
 def strUrlEncode(strData: str):
@@ -16,7 +18,8 @@ def send_registration_data():
     if len(login.get()) == 0 or len(password.get()) == 0 :
         label['text'] = 'Please enter data'
         return
-    jsonMessage = json.dumps({"Type": "RegistrationRequest","username": strUrlEncode(login.get()) , "password":strUrlEncode(password.get())})
+    jsonMessage = json.dumps({"Type": "RegistrationRequest",
+                              "username": strUrlEncode(login.get()) , "password":strUrlEncode(password.get())})
     print(jsonMessage)
     result = jsonMqService.Send(jsonMessage)
     label['text'] = result
