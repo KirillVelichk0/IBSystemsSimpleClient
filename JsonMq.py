@@ -45,13 +45,16 @@ class JsonMq:
         
     def GetAndVerifyTriplet(self):
         try:
-            s = self.Get()
-            nonce = self.GetForCount(32)
+            s = self.GetBytes()
+            nonce = bytes(self.GetForCount(32))
+            digest = SHA256.new(nonce)
             openKey = self.Get()
-            openKey = rsa.PublicKey.load_pkcs1(openKey.encode())
-            rsa.verify(bytes(nonce), s.encode(), openKey)
+            openKey = RSA.import_key(openKey)
+            pkcs1_15.new(openKey).verify(digest, s)
+            print("Verify is very nice")
             return True
-        except:
+        except Exception as ex:
+            print(str(ex))
             return False
             
         
@@ -122,4 +125,13 @@ class JsonMq:
         jsonMessage = self.GetForCount(packLenI)
         print(jsonMessage.decode())
         return jsonMessage.decode()
+    
+    def GetBytes(self):
+        print("Json getting started")
+        packLen = self.GetForCount(4)
+        print("data received")
+        packLenI = int.from_bytes(packLen, byteorder= 'big', signed= False)
+        print("Getted pack len " + str(packLenI))
+        bytes_message = self.GetForCount(packLenI)
+        return bytes(bytes_message)
         
