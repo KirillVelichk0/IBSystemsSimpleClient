@@ -1,7 +1,22 @@
 import struct
 import socket
-import rsa
-from OpenSSL import rand
+import os
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+
+def generate_keys():
+    modulus_length = 2048
+
+    key = RSA.generate(modulus_length)
+    #print (key.exportKey())
+
+    pub_key = key.publickey()
+    #print (pub_key.exportKey())
+
+    return key, pub_key
+
+
 class JsonMq:
     def __init__(self) -> None:
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -17,14 +32,14 @@ class JsonMq:
         return self.GetAndVerifyTriplet()
     
     def GenAndSendTriplet(self):
-        (pubkey, privkey) = rsa.newkeys(2048)
-        nonce = rand.bytes(32)
-        s = rsa.sign(nonce, privkey, "SHA-256")
-        s_str = s.decode()
-        self.Send(s_str)
+        (privkey, pubkey) = generate_keys()
+        nonce = os.urandom(32)
+        digest = SHA256.new(nonce)
+        signature = pkcs1_15.new(privkey).sign(digest)
+        self.SendBytes(signature)
         self.sockConn.sendall(nonce)
-        pubkey_str = pubkey.save_pkcs1()
-        self.Send(pubkey_str)
+        pubkey_str = pubkey.export_key()
+        self.SendBytes(pubkey_str)
         
         
         
@@ -51,6 +66,17 @@ class JsonMq:
         print(jsonBinary)
         self.sockConn.sendall(jsonBinary)
         return 'sended'
+    
+    def SendBytes(self, bytes_in):
+        if len(bytes_in) > self.maxLenMessageConst :
+            return 'Too big input'
+        bytesLenBuffer = struct.pack("!L", len(bytes_in))
+        print("len " + str(len(bytes_in)))
+        self.sockConn.sendall(bytesLenBuffer)
+        print(bytes_in)
+        self.sockConn.sendall(bytes_in)
+        return 'sended'
+    
     
     
     def GetForCount(self, count):
