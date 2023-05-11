@@ -3,10 +3,41 @@ import json
 import hashlib
 import base64
 import JsonMq
-
+import random
 jsonMqService = JsonMq.JsonMq()
 jsonMqService.SecureChannel()
 maxLenMessageConst = 100000
+
+def GetBase():
+    return (115, 2003000168)
+
+def GenSecretKey()->int:
+    return random.randint(1000, 2000000000)
+
+def GenPreKey(myKey: int)->int:
+    a, p = GetBase()
+    return pow(a, myKey, p)
+
+def GenFinalKey(anotherKey: int, mySecret: int) -> int:
+    a, p = GetBase()
+    return pow(anotherKey, mySecret, p)
+
+
+def DiffiHelman():
+    secret = GenSecretKey()
+    pre_key = GenPreKey(secret)
+    jsonToSend = json.dumps({
+        'Type': 'Helman',
+        'Key': pre_key
+    })
+    jsonMqService.Send(jsonToSend)
+    responseJson = json.loads(jsonMqService.Get())
+    server_key = int(responseJson['Key'])
+    final = GenFinalKey(server_key, secret)
+    print(final)
+
+
+DiffiHelman()
 
 def strUrlEncode(strData: str):
     return base64.urlsafe_b64encode(strData.encode()).decode()
@@ -47,12 +78,15 @@ def send_auth_data():
     shaObj = hashlib.sha256()
     shaObj.update(password.get().encode())
     hash1Round = shaObj.digest()
+    print(hash1Round)
     shaObj = hashlib.sha256()
     shaObj.update(keyWord)
     shaObj.update(hash1Round)
     hash2Round = shaObj.digest()
+    print(hash2Round)
     hashEncoded = base64.urlsafe_b64encode(hash2Round)
     jsonMessage = json.dumps({"Type": "GetAuthResult","username":strUrlEncode(login.get()), "hash":hashEncoded.decode()})
+    print(jsonMessage)
     jsonMqService.Send(jsonMessage)
     try:
         authResult = json.loads(jsonMqService.Get())

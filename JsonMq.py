@@ -5,6 +5,36 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 
+def GetBase():
+    return (115, 2003000168)
+
+def GenSecretKey()->int:
+    return random.randint(1000, 2000000000)
+
+def GenPreKey(myKey: int)->int:
+    a, p = GetBase()
+    return pow(a, myKey, p)
+
+def GenFinalKey(anotherKey: int, mySecret: int) -> int:
+    a, p = GetBase()
+    return pow(anotherKey, mySecret, p)
+
+
+def DiffiHelman():
+    secret = GenSecretKey()
+    pre_key = GenPreKey(secret)
+    jsonToSend = json.dumps({
+        'Type': 'Helman',
+        'Key': pre_key
+    })
+    jsonMqService.Send(jsonToSend)
+    responseJson = json.loads(jsonMqService.Get())
+    server_key = str(responseJson['Key'])
+    final = GenFinalKey(server_key, secret)
+    print(final)
+
+
+
 def generate_keys():
     modulus_length = 2048
 
