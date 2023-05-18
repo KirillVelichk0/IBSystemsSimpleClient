@@ -4,6 +4,7 @@ import hashlib
 import base64
 import JsonMq
 import random
+from DiffiHelman import DiffieHelm
 jsonMqService = JsonMq.JsonMq()
 jsonMqService.SecureChannel()
 maxLenMessageConst = 100000
@@ -14,30 +15,50 @@ def GetBase():
 def GenSecretKey()->int:
     return random.randint(1000, 2000000000)
 
-def GenPreKey(myKey: int)->int:
-    a, p = GetBase()
+def GenPreKey(myKey: int, a, p)->int:
     return pow(a, myKey, p)
 
-def GenFinalKey(anotherKey: int, mySecret: int) -> int:
-    a, p = GetBase()
+def GenFinalKey(anotherKey: int, mySecret: int, p) -> int:
     return pow(anotherKey, mySecret, p)
 
 
 def DiffiHelman():
-    secret = GenSecretKey()
-    pre_key = GenPreKey(secret)
+    helm = DiffieHelm()
+    helm.generate_parameters_client()
+    secret = helm.a
+    a = helm.g
+    p = helm.p
+    pre_key = GenPreKey(secret, a, p)
+    print("A " + str(a))
+    print("P " + str(p))
+    print("secret " + str(secret))
+    print("pre_key " + str(pre_key))
     jsonToSend = json.dumps({
         'Type': 'Helman',
-        'Key': pre_key
+        'Key': pre_key,
+        'A': a,
+        'P': p
     })
     jsonMqService.Send(jsonToSend)
     responseJson = json.loads(jsonMqService.Get())
     server_key = int(responseJson['Key'])
-    final = GenFinalKey(server_key, secret)
+    print('ServerKey ' + str(server_key))
+    final = GenFinalKey(server_key, secret, p)
     print(final)
 
 
 DiffiHelman()
+
+class Rc4:
+    def __init__(self, seed: int):
+        self.gen = random.Random()
+        self.gen.seed(seed)
+
+    def CryptDectypt(self, data: bytes):
+        for i in range(0, len(data)):
+            curByte = data[i]
+            curByte = curByte ^ self.gen.randbytes(1)
+        return data
 
 def strUrlEncode(strData: str):
     return base64.urlsafe_b64encode(strData.encode()).decode()
