@@ -1,4 +1,5 @@
 import sys, os
+from Pollard import solve
 lib_path = os.path.abspath(os.path.join(__file__, '..', 'cppGenerator'))
 sys.path.append(lib_path)
 from cppGenerator.caller import Generator as CppGen
@@ -29,12 +30,20 @@ def GenFinalKey(anotherKey: int, mySecret: int, p) -> int:
     return pow(anotherKey, mySecret, p)
 
 
+
+global_g = []
+global_A= []
+global_p = []
+
+
 def DiffiHelman():
     helm = DiffieHelm()
     helm.generate_parameters_client()
     secret = helm.a
     a = helm.g
     p = helm.p
+    global_p.append(p)
+    global_g.append(a)
     pre_key = GenPreKey(secret, a, p)
     print("A " + str(a))
     print("P " + str(p))
@@ -49,6 +58,7 @@ def DiffiHelman():
     jsonMqService.Send(jsonToSend)
     responseJson = json.loads(jsonMqService.Get())
     server_key = int(responseJson['Key'])
+    global_A.append(server_key)
     print('ServerKey ' + str(server_key))
     final = GenFinalKey(server_key, secret, p)
     print(final)
@@ -152,9 +162,15 @@ label.pack(anchor=tk.NW, padx=6, pady=6)
 encrL = tk.Text(height= 7)
 encrL.pack(anchor=tk.NW, padx=6, pady=6)
 
+
+
 decrL = tk.Text(height= 7)
 decrL.pack(anchor=tk.NW, padx=6, pady=6)
 JsonMq.helper.SetBox(encrL, decrL)
 
 
+secretServer = tk.Text(height=2)
+secretServer.pack(anchor=tk.NW, padx=6, pady=6)
+
+secretServer.insert('1.0', str(solve(global_g[0], global_A[0], global_p[0])))
 root.mainloop()
