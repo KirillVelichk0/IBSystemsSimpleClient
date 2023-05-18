@@ -61,7 +61,7 @@ class Rc4:
         self.gen = CppGen()
         self.gen.SetSeed(seed)
 
-    def CryptDectypt(self, data: bytes):
+    def CryptDectypt(self, data: bytes) -> bytes:
         finalBytes = bytearray()
         for i in range(0, len(data)):
             curByte = data[i: i+1]
@@ -69,7 +69,6 @@ class Rc4:
             helpByte = bytearray()
             helpByte.append(r8b)
             helpByte = bytes(helpByte)
-            print(r8b)
             curByte = bytes(a ^ b for (a, b) in zip(curByte, helpByte))
             curByte = curByte[0]
             finalBytes.append(curByte)
@@ -149,5 +148,13 @@ btnA = tk.Button(text="Authentificate", command=send_auth_data)
 btnA.pack(anchor=tk.NW, padx=6, pady=6)
 label = tk.Label()
 label.pack(anchor=tk.NW, padx=6, pady=6)
-  
+
+encrL = tk.Text(height= 7)
+encrL.pack(anchor=tk.NW, padx=6, pady=6)
+
+decrL = tk.Text(height= 7)
+decrL.pack(anchor=tk.NW, padx=6, pady=6)
+JsonMq.helper.SetBox(encrL, decrL)
+
+
 root.mainloop()

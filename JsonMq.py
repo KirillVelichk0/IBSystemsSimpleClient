@@ -6,8 +6,23 @@ from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 
 
+class HelpPrint:
+    def SetBox(self, boxE, boxD):
+        self.boxE = boxE
+        self.boxD = boxD
+
+    def SetE(self, encr):
+        from tkinter import END
+        self.boxE.delete("1.0", END)
+        self.boxE.insert("1.0", encr)
+
+    def SetB(self, decr):
+        from tkinter import END
+        self.boxD.delete("1.0", END)
+        self.boxD.insert("1.0", decr)
 
 
+helper = HelpPrint()
 
 def generate_keys():
     modulus_length = 2048
@@ -71,7 +86,11 @@ class JsonMq:
         jsonLenBuffer = struct.pack("!L", len(jsonBinary))
         if(self.cipher is not None):
             jsonLenBuffer = self.cipher.CryptDectypt(jsonLenBuffer)
+            print("Message before encrypting "+ str(jsonMessage))
+            helper.SetB(str(jsonMessage))
             jsonBinary = self.cipher.CryptDectypt(jsonBinary)
+            helper.SetE(str(jsonBinary))
+            print("Message after encrypting "+ str(jsonBinary))
         print("len " + str(len(jsonBinary)))
         self.sockConn.sendall(jsonLenBuffer)
         print(jsonBinary)
@@ -137,7 +156,11 @@ class JsonMq:
         print("Getted pack len " + str(packLenI))
         jsonMessage = self.GetForCount(packLenI)
         if self.cipher is not None:
+            print("Message before decrypting " + str(bytes(jsonMessage)))
+            helper.SetE(str(bytes(jsonMessage)))
             jsonMessage = self.cipher.CryptDectypt(jsonMessage)
+            helper.SetB(jsonMessage.decode())
+            print ("Message after decrypting " + jsonMessage.decode())
         print(jsonMessage.decode())
         return jsonMessage.decode()
     
