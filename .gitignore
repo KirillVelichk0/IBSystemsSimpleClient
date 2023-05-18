@@ -1,3 +1,5 @@
 *pycache*
 env/
+cppGenerator/build/
+*.vscode*
 *venv*

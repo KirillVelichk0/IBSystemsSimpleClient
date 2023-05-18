@@ -1,9 +1,16 @@
+import sys, os
+lib_path = os.path.abspath(os.path.join(__file__, '..', 'cppGenerator'))
+sys.path.append(lib_path)
+from cppGenerator.caller import Generator as CppGen
+
+
 import tkinter as tk
 import json
 import hashlib
 import base64
 import JsonMq
 import random
+import numpy as np
 from DiffiHelman import DiffieHelm
 jsonMqService = JsonMq.JsonMq()
 jsonMqService.SecureChannel()
@@ -45,20 +52,33 @@ def DiffiHelman():
     print('ServerKey ' + str(server_key))
     final = GenFinalKey(server_key, secret, p)
     print(final)
+    return final
 
 
-DiffiHelman()
 
 class Rc4:
     def __init__(self, seed: int):
-        self.gen = random.Random()
-        self.gen.seed(seed)
+        self.gen = CppGen()
+        self.gen.SetSeed(seed)
 
     def CryptDectypt(self, data: bytes):
+        finalBytes = bytearray()
         for i in range(0, len(data)):
-            curByte = data[i]
-            curByte = curByte ^ self.gen.randbytes(1)
-        return data
+            curByte = data[i: i+1]
+            r8b = self.gen.TryGen()
+            helpByte = bytearray()
+            helpByte.append(r8b)
+            helpByte = bytes(helpByte)
+            print(r8b)
+            curByte = bytes(a ^ b for (a, b) in zip(curByte, helpByte))
+            curByte = curByte[0]
+            finalBytes.append(curByte)
+        return bytes(finalBytes)
+
+
+
+jsonMqService.cipher = Rc4(DiffiHelman())
+
 
 def strUrlEncode(strData: str):
     return base64.urlsafe_b64encode(strData.encode()).decode()

@@ -30,6 +30,7 @@ class JsonMq:
         #self.sockConn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self.maxLenMessageConst = 100000
         self.unprocessed_bytes = bytearray()
+        self.cipher = None
     
     def SecureChannel(self):
         self.GenAndSendTriplet()
@@ -68,6 +69,9 @@ class JsonMq:
             return 'Too big input'
         jsonBinary = jsonMessage.encode()
         jsonLenBuffer = struct.pack("!L", len(jsonBinary))
+        if(self.cipher is not None):
+            jsonLenBuffer = self.cipher.CryptDectypt(jsonLenBuffer)
+            jsonBinary = self.cipher.CryptDectypt(jsonBinary)
         print("len " + str(len(jsonBinary)))
         self.sockConn.sendall(jsonLenBuffer)
         print(jsonBinary)
@@ -78,6 +82,9 @@ class JsonMq:
         if len(bytes_in) > self.maxLenMessageConst :
             return 'Too big input'
         bytesLenBuffer = struct.pack("!L", len(bytes_in))
+        if(self.cipher is not None):
+            bytes_in = self.cipher.CryptDectypt(bytes_in)
+            bytesLenBuffer = self.cipher.CryptDectypt(bytesLenBuffer)
         print("len " + str(len(bytes_in)))
         self.sockConn.sendall(bytesLenBuffer)
         print(bytes_in)
@@ -123,19 +130,27 @@ class JsonMq:
     def Get(self):
         print("Json getting started")
         packLen = self.GetForCount(4)
+        if self.cipher is not None:
+            packLen = self.cipher.CryptDectypt(bytes(packLen))
         print("data received")
         packLenI = int.from_bytes(packLen, byteorder= 'big', signed= False)
         print("Getted pack len " + str(packLenI))
         jsonMessage = self.GetForCount(packLenI)
+        if self.cipher is not None:
+            jsonMessage = self.cipher.CryptDectypt(jsonMessage)
         print(jsonMessage.decode())
         return jsonMessage.decode()
     
     def GetBytes(self):
         print("Json getting started")
         packLen = self.GetForCount(4)
+        if self.cipher is not None:
+            packLen = self.cipher.CryptDectypt(packLen)
         print("data received")
         packLenI = int.from_bytes(packLen, byteorder= 'big', signed= False)
         print("Getted pack len " + str(packLenI))
         bytes_message = self.GetForCount(packLenI)
+        if self.cipher is not None:
+            bytes_message = self.cipher.CryptDectypt(bytes_message)
         return bytes(bytes_message)
         
